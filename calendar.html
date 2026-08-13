@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus+SC&family=Karla:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --marble:#EFEEE9;
+  --parian:#FBFAF7;
+  --basalt:#1E2022;
+  --slate:#4B5057;
+  --lead:#83888D;
+  --rule:#DBDAD2;
+  --rule-soft:#E7E6DF;
+  --porphyry:#6B3A46;
+  --verdigris:#55786D;
+  --aegean:#3D6079;
+  --ochre:#A8843C;
+  --lavender:#6C6480;
+  --display:"Marcellus SC",Georgia,"Times New Roman",serif;
+  --body:"Karla",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--marble);
+  color:var(--basalt);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--ochre);outline-offset:2px}
+.page{max-width:1000px;margin:0 auto;padding:36px 22px 80px}
+
+/* ---------- header ---------- */
+.masthead{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.title{font-family:var(--display);font-size:26px;letter-spacing:.06em;margin:0;font-weight:400}
+.subtitle{font-size:13px;color:var(--lead);margin:4px 0 0;max-width:46ch}
+.tools{display:flex;gap:8px;align-items:center}
+.ghost{
+  background:transparent;border:1px solid var(--rule);padding:7px 13px;
+  font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--slate);
+  transition:border-color .15s,color .15s,background .15s;
+}
+.ghost:hover{border-color:var(--basalt);color:var(--basalt)}
+.solid{background:var(--basalt);border:1px solid var(--basalt);color:var(--parian)}
+.solid:hover{background:#000;color:#fff}
+.meander{height:12px;margin:22px 0 26px;opacity:.4;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='12'%3E%3Cpath d='M0 11.5H14M2 11.5V3.5H12V9.5H6V6.5' fill='none' stroke='%23A8843C' stroke-width='1'/%3E%3C/svg%3E");
+  background-repeat:repeat-x;background-position:left bottom}
+
+/* ---------- month bar ---------- */
+.monthbar{display:flex;align-items:baseline;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.month{font-family:var(--display);font-size:34px;letter-spacing:.04em;margin:0;font-weight:400;line-height:1.1}
+.latin{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--ochre);text-transform:uppercase}
+.nav{margin-left:auto;display:flex;gap:6px}
+.nav button{background:transparent;border:1px solid var(--rule);width:34px;height:34px;line-height:1;color:var(--slate)}
+.nav button.today{width:auto;padding:0 12px;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.nav button:hover{border-color:var(--basalt);color:var(--basalt)}
+
+/* ---------- grid ---------- */
+.weekdays,.grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.weekdays{border-bottom:1px solid var(--rule)}
+.weekdays span{
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--lead);
+  text-transform:uppercase;padding:0 0 8px 8px;
+}
+.grid{border-left:1px solid var(--rule-soft)}
+.cell{
+  background:var(--parian);border:0;border-right:1px solid var(--rule-soft);border-bottom:1px solid var(--rule-soft);
+  min-height:104px;padding:8px 8px 10px;text-align:left;display:flex;flex-direction:column;gap:5px;
+  position:relative;transition:background .15s;
+}
+.cell:hover{background:#fff}
+.cell.other{background:transparent;pointer-events:none}
+.cell.other .num{color:#C4C2B9}
+.num{font-family:var(--mono);font-size:13px;color:var(--slate);letter-spacing:.02em}
+.cell.today .num{
+  color:var(--parian);background:var(--basalt);width:22px;height:22px;
+  display:inline-flex;align-items:center;justify-content:center;margin:-2px 0 0 -3px;
+}
+.tag-status{
+  position:absolute;top:9px;right:8px;font-family:var(--mono);font-size:9px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--lead);
+}
+.cell.s-away .tag-status{color:var(--porphyry)}
+.chips{display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.chip{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--slate);line-height:1.25;text-align:left}
+.chip::before{content:"";width:5px;height:5px;background:var(--c);flex:0 0 5px;border-radius:50%}
+.chip-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.more{font-family:var(--mono);font-size:10px;color:var(--lead);letter-spacing:.06em}
+
+/* ---------- agenda ---------- */
+.agenda{margin-top:40px}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--lead);margin-bottom:14px}
+.arow{display:grid;grid-template-columns:88px 1fr;gap:14px;padding:12px 6px;border-top:1px solid var(--rule-soft);width:100%;background:transparent;border-left:0;border-right:0;border-bottom:0;text-align:left}
+.arow:hover{background:var(--parian)}
+.adate{font-family:var(--mono);font-size:12px;color:var(--lead);letter-spacing:.04em;padding-top:2px}
+.arow.is-today .adate{color:var(--ochre)}
+.aitem{display:flex;gap:8px;align-items:baseline;font-size:14.5px}
+.aitem+.aitem{margin-top:5px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--c);flex:0 0 6px;transform:translateY(-2px)}
+.atime{font-family:var(--mono);font-size:12px;color:var(--lead);flex:0 0 auto}
+.away-note{font-size:13px;color:var(--porphyry);letter-spacing:.02em}
+.empty{color:var(--lead);font-size:14px;padding:14px 6px;border-top:1px solid var(--rule-soft)}
+
+/* ---------- legend ---------- */
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:34px;padding-top:16px;border-top:1px solid var(--rule)}
+.legend span{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--lead)}
+
+/* ---------- overlay + panel ---------- */
+.overlay{position:fixed;inset:0;background:rgba(30,32,34,.28);opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+.overlay.open{opacity:1;pointer-events:auto}
+.panel{
+  position:fixed;top:0;right:0;height:100%;width:400px;max-width:100%;background:var(--parian);
+  border-left:1px solid var(--rule);transform:translateX(100%);transition:transform .25s ease;
+  z-index:21;display:flex;flex-direction:column;
+}
+.overlay.open .panel{transform:none}
+.panel-head{padding:22px 24px 16px;border-bottom:1px solid var(--rule-soft)}
+.panel-body{padding:20px 24px 40px;overflow-y:auto;flex:1}
+.close{position:absolute;top:16px;right:18px;background:transparent;border:0;font-size:20px;line-height:1;color:var(--lead)}
+.close:hover{color:var(--basalt)}
+.inscription{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;color:var(--ochre);text-transform:uppercase}
+.panel-date{font-family:var(--display);font-size:22px;letter-spacing:.04em;margin:8px 0 0}
+.statusline{font-size:13px;color:var(--lead);margin-top:6px}
+.statusline b{font-weight:600;color:var(--porphyry)}
+.ev{padding:12px 0;border-bottom:1px solid var(--rule-soft);display:flex;gap:10px}
+.ev-main{flex:1;min-width:0}
+.ev-title{font-size:15.5px;display:flex;align-items:baseline;gap:8px}
+.ev-time{font-family:var(--mono);font-size:12px;color:var(--lead);margin-top:2px;display:block}
+.ev-note{font-size:13.5px;color:var(--slate);margin-top:5px}
+.ev-actions{display:flex;gap:4px;flex:0 0 auto}
+.icon{background:transparent;border:1px solid transparent;color:var(--lead);font-size:12px;padding:3px 7px;letter-spacing:.06em;text-transform:uppercase}
+.icon:hover{border-color:var(--rule);color:var(--basalt)}
+.blank{font-size:14px;color:var(--lead);padding:16px 0;border-bottom:1px solid var(--rule-soft)}
+
+/* ---------- forms ---------- */
+.field{margin-top:14px}
+label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--lead);margin-bottom:5px}
+input[type=text],input[type=email],textarea,select{
+  width:100%;background:#fff;border:1px solid var(--rule);padding:9px 10px;
+  font-family:var(--body);font-size:15px;color:var(--basalt);
+}
+textarea{min-height:84px;resize:vertical}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--lead) 50%),linear-gradient(135deg,var(--lead) 50%,transparent 50%);background-position:calc(100% - 16px) 18px,calc(100% - 11px) 18px;background-size:5px 5px;background-repeat:no-repeat}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.hint{font-size:12.5px;color:var(--lead);margin-top:8px;line-height:1.45}
+.quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.quick button{background:transparent;border:1px solid var(--rule);font-size:12.5px;padding:5px 10px;color:var(--slate)}
+.quick button:hover{border-color:var(--basalt)}
+.section-line{margin:26px 0 0;padding-top:18px;border-top:1px solid var(--rule)}
+.feedback{font-size:13px;color:var(--verdigris);margin-top:10px;min-height:18px}
+.feedback.warn{color:var(--porphyry)}
+
+/* ---------- modal ---------- */
+.modal{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-48%) scale(.98);opacity:0;
+  width:440px;max-width:calc(100% - 32px);max-height:86vh;overflow-y:auto;background:var(--parian);
+  border:1px solid var(--rule);padding:26px;z-index:31;pointer-events:none;transition:opacity .18s,transform .18s;
+}
+.overlay.open+.modal,.modal.open{opacity:1;transform:translate(-50%,-50%);pointer-events:auto}
+.modal h2{font-family:var(--display);font-size:19px;letter-spacing:.05em;font-weight:400;margin:0 0 4px}
+
+/* ---------- editing chrome ---------- */
+.editbar{display:none;align-items:center;gap:10px;background:var(--basalt);color:var(--parian);padding:9px 14px;margin-bottom:22px;flex-wrap:wrap}
+body.editing .editbar{display:flex}
+body.editing .view-only{display:none}
+.editbar .label{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase}
+.editbar .ghost{border-color:#4a4d50;color:#D8D6CF}
+.editbar .ghost:hover{border-color:var(--parian);color:#fff;background:transparent}
+.editbar .spacer{margin-left:auto}
+.unsaved{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ochre);display:none}
+body.dirty .unsaved{display:inline}
+.edit-only{display:none}
+body.editing .edit-only{display:block}
+
+@media (max-width:720px){
+  .page{padding:24px 14px 64px}
+  .month{font-size:27px}
+  .cell{min-height:70px;padding:6px 5px;gap:4px}
+  .weekdays span{padding-left:5px;font-size:9px;letter-spacing:.12em}
+  .chips{flex-direction:row;flex-wrap:wrap;gap:4px}
+  .chip-t{display:none}
+  .chip::before{width:6px;height:6px;flex-basis:6px}
+  .tag-status{font-size:8px;letter-spacing:.08em;top:7px;right:5px}
+  .more{display:none}
+  .panel{width:100%;top:auto;bottom:0;height:88vh;border-left:0;border-top:1px solid var(--rule);transform:translateY(100%)}
+  .overlay.open .panel{transform:none}
+  .arow{grid-template-columns:70px 1fr;gap:10px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="editbar">
+    <span class="label">Editing</span>
+    <span class="unsaved">Unsaved changes</span>
+    <span class="spacer"></span>
+    <button class="ghost" id="btnSettings">Settings</button>
+    <button class="ghost" id="btnExport">Download file</button>
+    <button class="ghost" id="btnLock">Done</button>
+  </div>
+
+  <header class="masthead">
+    <div>
+      <h1 class="title" id="calTitle">Calendar</h1>
+      <p class="subtitle" id="calNote"></p>
+    </div>
+    <div class="tools">
+      <button class="ghost view-only" id="btnAsk">Ask a question</button>
+      <button class="ghost view-only" id="btnEdit">Edit</button>
+    </div>
+  </header>
+
+  <div class="meander" aria-hidden="true"></div>
+
+  <div class="monthbar">
+    <div>
+      <h2 class="month" id="monthLabel">Month</h2>
+      <div class="latin" id="monthLatin"></div>
+    </div>
+    <div class="nav">
+      <button id="btnPrev" aria-label="Previous month">‹</button>
+      <button class="today" id="btnToday">Today</button>
+      <button id="btnNext" aria-label="Next month">›</button>
+    </div>
+  </div>
+
+  <div class="weekdays" id="weekdays" data-dynamic></div>
+  <div class="grid" id="grid" data-dynamic></div>
+
+  <section class="agenda">
+    <div class="eyebrow">This month, day by day</div>
+    <div id="agenda" data-dynamic></div>
+  </section>
+
+  <div class="legend" id="legend" data-dynamic></div>
+</div>
+
+<!-- day panel -->
+<div class="overlay" id="panelOverlay">
+  <aside class="panel" role="dialog" aria-modal="true" aria-label="Day details">
+    <div class="panel-head">
+      <button class="close" id="panelClose" aria-label="Close">×</button>
+      <div class="inscription" id="panelInscription"></div>
+      <h3 class="panel-date" id="panelDate"></h3>
+      <div class="statusline" id="panelStatus"></div>
+    </div>
+    <div class="panel-body" id="panelBody" data-dynamic></div>
+  </aside>
+</div>
+
+<!-- unlock -->
+<div class="overlay" id="unlockOverlay"></div>
+<div class="modal" id="unlockModal" role="dialog" aria-modal="true" aria-label="Unlock editing">
+  <h2>Unlock editing</h2>
+  <p class="hint">Your passcode only hides the editing tools on this device. What actually protects the page is that nobody else can publish over your file.</p>
+  <div class="field">
+    <label for="passInput">Passcode</label>
+    <input type="text" id="passInput" autocomplete="off">
+  </div>
+  <div class="feedback" id="unlockFeedback"></div>
+  <div class="actions">
+    <button class="ghost solid" id="unlockGo">Unlock</button>
+    <button class="ghost" id="unlockCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- settings -->
+<div class="overlay" id="settingsOverlay"></div>
+<div class="modal" id="settingsModal" role="dialog" aria-modal="true" aria-label="Settings">
+  <h2>Settings</h2>
+  <div class="field">
+    <label for="setTitle">Calendar title</label>
+    <input type="text" id="setTitle">
+  </div>
+  <div class="field">
+    <label for="setNote">Line under the title</label>
+    <input type="text" id="setNote">
+  </div>
+  <div class="field">
+    <label for="setEmail">Email for questions</label>
+    <input type="email" id="setEmail" placeholder="you@example.com">
+    <p class="hint">Questions open in the sender's mail app, addressed to you.</p>
+  </div>
+  <div class="field">
+    <label for="setForm">Form endpoint (optional)</label>
+    <input type="text" id="setForm" placeholder="https://formspree.io/f/xxxxxxx">
+    <p class="hint">Paste a Formspree (or similar) URL to receive questions without the sender needing a mail app. Leave empty to use email.</p>
+  </div>
+  <div class="row2 field">
+    <div>
+      <label for="setWeek">Week starts on</label>
+      <select id="setWeek"><option value="1">Monday</option><option value="0">Sunday</option></select>
+    </div>
+    <div>
+      <label for="setPass">New passcode</label>
+      <input type="text" id="setPass" placeholder="leave empty to keep">
+    </div>
+  </div>
+  <div class="feedback" id="setFeedback"></div>
+  <div class="actions">
+    <button class="ghost solid" id="setSave">Save settings</button>
+    <button class="ghost" id="setCancel">Cancel</button>
+  </div>
+</div>
+
+<script id="calendar-data" type="application/json">
+{
+  "title": "Alex's calendar",
+  "note": "What I'm up to this month. Ask me about any day — tap it and send a question.",
+  "email": "",
+  "formEndpoint": "",
+  "weekStart": 1,
+  "passHash": "ykqul0",
+  "events": [
+    {"id":"e1","date":"2026-08-14","time":"17:00–23:00","title":"Work shift","tag":"work","note":""},
+    {"id":"e2","date":"2026-08-15","time":"19:30","title":"Dinner at home","tag":"social","note":"Extra chairs available — let me know before 17:00."},
+    {"id":"e3","date":"2026-08-18","time":"09:00–13:00","title":"Study block","tag":"study","note":""},
+    {"id":"e4","date":"2026-08-22","time":"","title":"Away for the weekend","tag":"travel","note":"Back Sunday evening."}
+  ],
+  "status": {"2026-08-14":"busy","2026-08-22":"away","2026-08-23":"away"}
+}
+</script>
+
+<script>
+(function(){
+"use strict";
+
+var TAGS = {
+  study:    {label:"Study",    color:"#3D6079"},
+  work:     {label:"Work",     color:"#6B3A46"},
+  social:   {label:"Social",   color:"#A8843C"},
+  travel:   {label:"Travel",   color:"#55786D"},
+  personal: {label:"Personal", color:"#6C6480"}
+};
+var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+var LATIN  = ["IANVARIVS","FEBRVARIVS","MARTIVS","APRILIS","MAIVS","IVNIVS","IVLIVS","AVGVSTVS","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+var DAYS   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+var DAYS_S = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+var data = JSON.parse(document.getElementById("calendar-data").textContent);
+if(!data.status) data.status = {};
+if(!data.events) data.events = [];
+
+var editing = false, dirty = false, openDate = null, askOpen = false, editingId = null;
+var view = new Date(); view.setDate(1); view.setHours(0,0,0,0);
+
+/* ---------- helpers ---------- */
+function $(id){ return document.getElementById(id); }
+function pad(n){ return n<10 ? "0"+n : ""+n; }
+function iso(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function fromIso(s){ var p=s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+function todayIso(){ return iso(new Date()); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function hash(s){ var h=5381; for(var i=0;i<s.length;i++){ h=((h*33)+s.charCodeAt(i))>>>0; } return h.toString(36); }
+function toRoman(n){
+  var m=[[1000,"M"],[900,"CM"],[500,"D"],[400,"CD"],[100,"C"],[90,"XC"],[50,"L"],[40,"XL"],[10,"X"],[9,"IX"],[5,"V"],[4,"IV"],[1,"I"]], out="";
+  for(var i=0;i<m.length;i++){ while(n>=m[i][0]){ out+=m[i][1]; n-=m[i][0]; } }
+  return out;
+}
+function longDate(s){ var d=fromIso(s); return DAYS[d.getDay()]+" "+d.getDate()+" "+MONTHS[d.getMonth()]; }
+function eventsOn(s){
+  return data.events.filter(function(e){ return e.date===s; }).sort(function(a,b){
+    return (a.time||"~").localeCompare(b.time||"~");
+  });
+}
+function markDirty(){ dirty = true; document.body.classList.add("dirty"); }
+
+/* ---------- render ---------- */
+function render(){
+  $("calTitle").textContent = data.title || "Calendar";
+  $("calNote").textContent = data.note || "";
+  document.title = data.title || "Calendar";
+
+  var y = view.getFullYear(), m = view.getMonth();
+  $("monthLabel").textContent = MONTHS[m]+" "+y;
+  $("monthLatin").textContent = LATIN[m]+" · "+toRoman(y);
+
+  // weekday strip
+  var wd = "";
+  for(var i=0;i<7;i++){ wd += "<span>"+DAYS_S[(i+data.weekStart)%7]+"</span>"; }
+  $("weekdays").innerHTML = wd;
+
+  // grid
+  var first = new Date(y, m, 1);
+  var offset = (first.getDay() - data.weekStart + 7) % 7;
+  var total = new Date(y, m+1, 0).getDate();
+  var cells = Math.ceil((offset+total)/7)*7;
+  var t = todayIso(), html = "";
+
+  for(var c=0;c<cells;c++){
+    var dayNum = c - offset + 1;
+    if(dayNum<1 || dayNum>total){
+      var ghost = dayNum<1 ? new Date(y,m,0).getDate()+dayNum : dayNum-total;
+      html += '<div class="cell other"><span class="num">'+ghost+'</span></div>';
+      continue;
+    }
+    var key = y+"-"+pad(m+1)+"-"+pad(dayNum);
+    var st = data.status[key] || "free";
+    var evs = eventsOn(key);
+    var cls = "cell" + (key===t ? " today":"") + (st!=="free" ? " s-"+st : "");
+    var chips = "";
+    var shown = evs.slice(0,3);
+    for(var e=0;e<shown.length;e++){
+      var tg = TAGS[shown[e].tag] || TAGS.personal;
+      chips += '<span class="chip" style="--c:'+tg.color+'"><span class="chip-t">'+esc(shown[e].title)+'</span></span>';
+    }
+    if(evs.length>3) chips += '<span class="more">+'+(evs.length-3)+'</span>';
+    html += '<button class="'+cls+'" data-date="'+key+'">'
+          + '<span class="num">'+dayNum+'</span>'
+          + (st!=="free" ? '<span class="tag-status">'+st+'</span>' : '')
+          + '<span class="chips">'+chips+'</span></button>';
+  }
+  $("grid").innerHTML = html;
+
+  // agenda
+  var rows = "", any = false;
+  for(var d=1; d<=total; d++){
+    var k = y+"-"+pad(m+1)+"-"+pad(d);
+    var ev = eventsOn(k), s = data.status[k] || "free";
+    if(!ev.length && s==="free") continue;
+    any = true;
+    var body = "";
+    if(s!=="free") body += '<div class="away-note">'+(s==="away"?"Away":"Busy all day")+'</div>';
+    for(var j=0;j<ev.length;j++){
+      var tag = TAGS[ev[j].tag] || TAGS.personal;
+      body += '<div class="aitem"><span class="dot" style="--c:'+tag.color+'"></span>'
+            + (ev[j].time ? '<span class="atime">'+esc(ev[j].time)+'</span>' : '')
+            + '<span>'+esc(ev[j].title)+'</span></div>';
+    }
+    rows += '<button class="arow'+(k===t?" is-today":"")+'" data-date="'+k+'">'
+          + '<span class="adate">'+DAYS_S[fromIso(k).getDay()]+" "+d+'</span><span>'+body+'</span></button>';
+  }
+  $("agenda").innerHTML = any ? rows : '<div class="empty">Nothing on the calendar for this month yet.</div>';
+
+  // legend
+  var leg = "";
+  for(var key2 in TAGS){
+    leg += '<span><i class="dot" style="--c:'+TAGS[key2].color+'"></i>'+TAGS[key2].label+'</span>';
+  }
+  leg += '<span style="color:#6B3A46">Away — not around that day</span>';
+  $("legend").innerHTML = leg;
+}
+
+/* ---------- day panel ---------- */
+function openDay(dateStr){
+  openDate = dateStr; askOpen = false; editingId = null;
+  if(dateStr){
+    var d = fromIso(dateStr);
+    $("panelInscription").textContent = toRoman(d.getDate())+" · "+LATIN[d.getMonth()]+" · "+toRoman(d.getFullYear());
+    $("panelDate").textContent = longDate(dateStr);
+    var st = data.status[dateStr] || "free";
+    $("panelStatus").innerHTML = st==="free" ? "Around, unless something below says otherwise."
+      : (st==="away" ? "<b>Away</b> — not in town." : "<b>Busy</b> all day.");
+  } else {
+    $("panelInscription").textContent = "QVAESTIO";
+    $("panelDate").textContent = "Ask a question";
+    $("panelStatus").textContent = "About the calendar in general.";
+  }
+  renderPanel();
+  $("panelOverlay").classList.add("open");
+}
+function closePanel(){ $("panelOverlay").classList.remove("open"); openDate=null; askOpen=false; editingId=null; }
+
+function renderPanel(){
+  var h = "";
+  if(openDate){
+    var evs = eventsOn(openDate);
+    if(evs.length){
+      for(var i=0;i<evs.length;i++){
+        var e = evs[i], tag = TAGS[e.tag] || TAGS.personal;
+        h += '<div class="ev"><span class="dot" style="--c:'+tag.color+';margin-top:8px"></span><div class="ev-main">'
+           + '<div class="ev-title">'+esc(e.title)+'</div>'
+           + (e.time ? '<span class="ev-time">'+esc(e.time)+'</span>' : '')
+           + (e.note ? '<div class="ev-note">'+esc(e.note)+'</div>' : '')
+           + '</div>'
+           + (editing ? '<div class="ev-actions"><button class="icon" data-edit="'+e.id+'">Edit</button>'
+                      + '<button class="icon" data-del="'+e.id+'">Remove</button></div>' : '')
+           + '</div>';
+      }
+    } else {
+      h += '<div class="blank">Nothing planned yet.</div>';
+    }
+  }
+
+  if(editing && openDate){
+    var cur = editingId ? data.events.filter(function(x){return x.id===editingId;})[0] : null;
+    var opts = "";
+    for(var k in TAGS){
+      opts += '<option value="'+k+'"'+(cur && cur.tag===k ? " selected":"")+'>'+TAGS[k].label+'</option>';
+    }
+    var st = data.status[openDate] || "free";
+    h += '<div class="section-line">'
+       + '<div class="field"><label for="fStatus">Day status</label><select id="fStatus">'
+       + '<option value="free"'+(st==="free"?" selected":"")+'>Around</option>'
+       + '<option value="busy"'+(st==="busy"?" selected":"")+'>Busy all day</option>'
+       + '<option value="away"'+(st==="away"?" selected":"")+'>Away</option></select></div>'
+       + '<div class="row2 field"><div><label for="fTime">Time</label>'
+       + '<input type="text" id="fTime" placeholder="19:30" value="'+esc(cur?cur.time:"")+'"></div>'
+       + '<div><label for="fTag">Category</label><select id="fTag">'+opts+'</select></div></div>'
+       + '<div class="field"><label for="fTitle">Activity</label>'
+       + '<input type="text" id="fTitle" placeholder="Dinner at home" value="'+esc(cur?cur.title:"")+'"></div>'
+       + '<div class="field"><label for="fNote">Note for visitors</label>'
+       + '<textarea id="fNote" placeholder="Anything people should know">'+esc(cur?cur.note:"")+'</textarea></div>'
+       + '<div class="actions"><button class="ghost solid" id="saveEvent">'+(cur?"Save changes":"Add activity")+'</button>'
+       + (cur?'<button class="ghost" id="cancelEdit">Cancel</button>':'')+'</div>'
+       + '<div class="feedback" id="evFeedback"></div></div>';
+  }
+
+  if(!editing){
+    if(!askOpen){
+      h += '<div class="actions"><button class="ghost solid" id="openAsk">'
+         + (openDate ? "Ask about this day" : "Write your question") + '</button></div>';
+    } else {
+      var qs = openDate
+        ? ["Are you having dinner with us?","Are you free that evening?","What time do you finish?","Can I drop by?"]
+        : ["Are you around this week?","When are you next free?","Can we plan something?"];
+      var quick = "";
+      for(var q=0;q<qs.length;q++){ quick += '<button data-quick="'+esc(qs[q])+'">'+esc(qs[q])+'</button>'; }
+      h += '<div class="section-line">'
+         + '<div class="field"><label for="qName">Your name</label><input type="text" id="qName" placeholder="So I know who is asking"></div>'
+         + '<div class="field"><label for="qMsg">Question</label><textarea id="qMsg" placeholder="'
+         + (openDate ? "Are you having dinner with us?" : "Ask me anything about the calendar") + '"></textarea>'
+         + '<div class="quick">'+quick+'</div></div>'
+         + '<div class="actions"><button class="ghost solid" id="qSend">Send question</button>'
+         + '<button class="ghost" id="qCopy">Copy text</button></div>'
+         + '<div class="feedback" id="qFeedback"></div></div>';
+    }
+  }
+  $("panelBody").innerHTML = h;
+}
+
+/* ---------- questions ---------- */
+function questionText(){
+  var name = ($("qName").value || "").trim();
+  var msg  = ($("qMsg").value || "").trim();
+  if(!msg) return null;
+  var body = msg + "\n\n";
+  if(openDate) body += "About " + longDate(openDate) + "\n";
+  body += "— " + (name || "a visitor");
+  return {name:name, msg:msg, body:body,
+          subject: openDate ? "Calendar: " + longDate(openDate) : "Calendar question"};
+}
+function feedback(el, text, warn){
+  var f = $(el); if(!f) return;
+  f.textContent = text; f.className = "feedback" + (warn ? " warn" : "");
+}
+function sendQuestion(){
+  var q = questionText();
+  if(!q){ feedback("qFeedback","Write your question first.",true); return; }
+  if(data.formEndpoint){
+    feedback("qFeedback","Sending…");
+    fetch(data.formEndpoint,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({name:q.name, date:openDate||"", message:q.msg})
+    }).then(function(r){
+      if(r.ok){ feedback("qFeedback","Sent. Thanks — I'll reply soon."); $("qMsg").value=""; }
+      else feedback("qFeedback","That didn't go through. Use Copy text and send it another way.",true);
+    }).catch(function(){
+      feedback("qFeedback","That didn't go through. Use Copy text and send it another way.",true);
+    });
+    return;
+  }
+  if(data.email){
+    window.location.href = "mailto:"+data.email+"?subject="+encodeURIComponent(q.subject)+"&body="+encodeURIComponent(q.body);
+    feedback("qFeedback","Opening your mail app.");
+    return;
+  }
+  copyQuestion("No contact address is set here — the text is copied, send it however you normally reach me.");
+}
+function copyQuestion(msg){
+  var q = questionText();
+  if(!q){ feedback("qFeedback","Write your question first.",true); return; }
+  var text = q.subject + "\n\n" + q.body;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){ feedback("qFeedback", msg || "Copied."); },
+      function(){ feedback("qFeedback","Couldn't copy — select the text manually.",true); });
+  } else {
+    feedback("qFeedback","Couldn't copy — select the text manually.",true);
+  }
+}
+
+/* ---------- editing ---------- */
+function saveEvent(){
+  var title = ($("fTitle").value||"").trim();
+  data.status[openDate] = $("fStatus").value;
+  if(data.status[openDate]==="free") delete data.status[openDate];
+  if(!title){
+    if(editingId){ feedback("evFeedback","An activity needs a name.",true); return; }
+    markDirty(); render(); renderPanel(); openDay(openDate); return;
+  }
+  var payload = {
+    date: openDate,
+    time: ($("fTime").value||"").trim(),
+    title: title,
+    tag: $("fTag").value,
+    note: ($("fNote").value||"").trim()
+  };
+  if(editingId){
+    for(var i=0;i<data.events.length;i++){
+      if(data.events[i].id===editingId){ payload.id=editingId; data.events[i]=payload; break; }
+    }
+    editingId = null;
+  } else {
+    payload.id = "e"+Date.now().toString(36)+Math.floor(Math.random()*1000);
+    data.events.push(payload);
+  }
+  markDirty(); render(); openDay(openDate);
+}
+function removeEvent(id){
+  data.events = data.events.filter(function(e){ return e.id!==id; });
+  if(editingId===id) editingId=null;
+  markDirty(); render(); renderPanel();
+}
+
+/* ---------- export ---------- */
+function exportFile(){
+  var clone = document.documentElement.cloneNode(true);
+  var dyn = clone.querySelectorAll("[data-dynamic]");
+  for(var i=0;i<dyn.length;i++) dyn[i].innerHTML = "";
+  var ov = clone.querySelectorAll(".overlay, .modal");
+  for(var j=0;j<ov.length;j++) ov[j].classList.remove("open");
+  var b = clone.querySelector("body"); if(b) b.className = "";
+  var json = JSON.stringify(data, null, 2).replace(/</g, "\\u003c");
+  clone.querySelector("#calendar-data").textContent = "\n" + json + "\n";
+  var html = "<!DOCTYPE html>\n" + clone.outerHTML;
+  var blob = new Blob([html], {type:"text/html"});
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "calendar.html";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  dirty = false; document.body.classList.remove("dirty");
+}
+
+/* ---------- settings ---------- */
+function openSettings(){
+  $("setTitle").value = data.title || "";
+  $("setNote").value  = data.note || "";
+  $("setEmail").value = data.email || "";
+  $("setForm").value  = data.formEndpoint || "";
+  $("setWeek").value  = String(data.weekStart);
+  $("setPass").value  = "";
+  feedback("setFeedback","");
+  $("settingsOverlay").classList.add("open");
+  $("settingsModal").classList.add("open");
+}
+function closeSettings(){
+  $("settingsOverlay").classList.remove("open");
+  $("settingsModal").classList.remove("open");
+}
+function saveSettings(){
+  data.title = $("setTitle").value.trim() || "Calendar";
+  data.note = $("setNote").value.trim();
+  data.email = $("setEmail").value.trim();
+  data.formEndpoint = $("setForm").value.trim();
+  data.weekStart = parseInt($("setWeek").value,10);
+  var np = $("setPass").value.trim();
+  if(np) data.passHash = hash(np);
+  markDirty(); render(); closeSettings();
+}
+
+/* ---------- unlock ---------- */
+function openUnlock(){
+  $("passInput").value = "";
+  feedback("unlockFeedback","");
+  $("unlockOverlay").classList.add("open");
+  $("unlockModal").classList.add("open");
+  setTimeout(function(){ $("passInput").focus(); }, 60);
+}
+function closeUnlock(){
+  $("unlockOverlay").classList.remove("open");
+  $("unlockModal").classList.remove("open");
+}
+function tryUnlock(){
+  if(hash($("passInput").value.trim()) === data.passHash){
+    editing = true;
+    document.body.classList.add("editing");
+    closeUnlock();
+    if(openDate) renderPanel();
+  } else {
+    feedback("unlockFeedback","That passcode doesn't match.",true);
+  }
+}
+
+/* ---------- events ---------- */
+$("btnPrev").onclick = function(){ view.setMonth(view.getMonth()-1); render(); };
+$("btnNext").onclick = function(){ view.setMonth(view.getMonth()+1); render(); };
+$("btnToday").onclick = function(){ view = new Date(); view.setDate(1); render(); };
+$("btnEdit").onclick = openUnlock;
+$("btnAsk").onclick = function(){ openDay(null); askOpen = true; renderPanel(); };
+$("btnLock").onclick = function(){
+  if(dirty && !window.confirm("You have changes that aren't downloaded yet. Leave editing anyway?")) return;
+  editing = false; editingId = null;
+  document.body.classList.remove("editing");
+  if(openDate!==null || askOpen) renderPanel();
+};
+$("btnSettings").onclick = openSettings;
+$("btnExport").onclick = exportFile;
+$("panelClose").onclick = closePanel;
+$("panelOverlay").onclick = function(e){ if(e.target===this) closePanel(); };
+$("unlockOverlay").onclick = closeUnlock;
+$("unlockCancel").onclick = closeUnlock;
+$("unlockGo").onclick = tryUnlock;
+$("passInput").onkeydown = function(e){ if(e.key==="Enter") tryUnlock(); };
+$("settingsOverlay").onclick = closeSettings;
+$("setCancel").onclick = closeSettings;
+$("setSave").onclick = saveSettings;
+
+$("grid").addEventListener("click", function(e){
+  var cell = e.target.closest("[data-date]");
+  if(cell) openDay(cell.getAttribute("data-date"));
+});
+$("agenda").addEventListener("click", function(e){
+  var row = e.target.closest("[data-date]");
+  if(row) openDay(row.getAttribute("data-date"));
+});
+$("panelBody").addEventListener("click", function(e){
+  var t = e.target;
+  if(t.id==="openAsk"){ askOpen = true; renderPanel(); return; }
+  if(t.id==="qSend"){ sendQuestion(); return; }
+  if(t.id==="qCopy"){ copyQuestion("Copied — paste it wherever you like."); return; }
+  if(t.id==="saveEvent"){ saveEvent(); return; }
+  if(t.id==="cancelEdit"){ editingId=null; renderPanel(); return; }
+  if(t.getAttribute("data-quick")){
+    var box = $("qMsg");
+    box.value = (box.value ? box.value.replace(/\s*$/,"") + " " : "") + t.getAttribute("data-quick");
+    box.focus(); return;
+  }
+  var del = t.getAttribute("data-del");
+  if(del){ removeEvent(del); return; }
+  var ed = t.getAttribute("data-edit");
+  if(ed){ editingId = ed; renderPanel(); var f=$("fTitle"); if(f) f.focus(); return; }
+});
+
+document.addEventListener("keydown", function(e){
+  var overlayOpen = $("panelOverlay").classList.contains("open")
+    || $("settingsModal").classList.contains("open")
+    || $("unlockModal").classList.contains("open");
+  if(e.key==="Escape"){
+    if($("unlockModal").classList.contains("open")) closeUnlock();
+    else if($("settingsModal").classList.contains("open")) closeSettings();
+    else if($("panelOverlay").classList.contains("open")) closePanel();
+    return;
+  }
+  if(overlayOpen) return;
+  if(e.key==="ArrowLeft"){ view.setMonth(view.getMonth()-1); render(); }
+  if(e.key==="ArrowRight"){ view.setMonth(view.getMonth()+1); render(); }
+});
+
+window.addEventListener("beforeunload", function(e){
+  if(dirty){ e.preventDefault(); e.returnValue = ""; }
+});
+
+render();
+})();
+</script>
+</body>
+</html>
